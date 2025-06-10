@@ -28,7 +28,7 @@ public sealed class Host
     /// with service lifetime attributes (<see cref="SingletonAttribute"/>, <see cref="ScopedAttribute"/>,
     /// <see cref="TransientAttribute"/>). It then creates a new host and registers these types with appropriate lifetimes.
     /// </remarks>
-    internal static Host Initialize()
+    public static Host Initialize()
     {
         var host = new Host();
         host.RegisterAttributedTypes();

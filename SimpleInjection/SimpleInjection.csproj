@@ -18,17 +18,14 @@
 	  <PackageBugTrackerUrl>https://github.com/DerekGooding/SimpleInjection/issues</PackageBugTrackerUrl>
 	  <RepositoryType>git</RepositoryType>
 
-	  <!--<PackageIcon>icon.png</PackageIcon>-->
 	  <GenerateDocumentationFile>true</GenerateDocumentationFile>
 	  <DocumentationFile>bin\SimpleInjection.xml</DocumentationFile>
   </PropertyGroup>
 
 	<ItemGroup>
 		<None Include="README.md" Pack="true" PackagePath="\" />
-		<None Include="$(MSBuildThisFileDirectory)../EnumSourceGenerator/bin/Release/netstandard2.0/EnumSourceGenerator.dll"
-		  Pack="true"
-		  PackagePath="analyzers/dotnet/cs/"
-		  Condition="Exists('$(MSBuildThisFileDirectory)../EnumSourceGenerator/bin/Release/netstandard2.0/EnumSourceGenerator.dll')" />
+		<Resource Include="icon.png" Pack="true" PackagePath="icon.png" />
+		<None Include="$(MSBuildThisFileDirectory)../EnumSourceGenerator/bin/Release/netstandard2.0/EnumSourceGenerator.dll" Pack="true" PackagePath="analyzers/dotnet/cs/" Condition="Exists('$(MSBuildThisFileDirectory)../EnumSourceGenerator/bin/Release/netstandard2.0/EnumSourceGenerator.dll')" />
 	</ItemGroup>
 
 </Project>

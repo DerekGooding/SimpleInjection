@@ -222,7 +222,7 @@ public sealed class Host
     /// <typeparam name="T">The type of service to retrieve.</typeparam>
     /// <returns>The singleton instance of the specified service type.</returns>
     /// <exception cref="InvalidOperationException">Thrown if the host has not been initialized or the service is not registered.</exception>
-    internal T Get<T>() where T : class
+    public T Get<T>() where T : class
     {
         if (!_initialized)
             throw new InvalidOperationException("Host must be initialized.");

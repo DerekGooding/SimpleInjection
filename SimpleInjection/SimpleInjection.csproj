@@ -7,7 +7,7 @@
 
 	  <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
 	  <PackageId>SimpleInjection</PackageId>
-	  <Version>0.9.2</Version>
+	  <Version>0.9.3</Version>
 	  <Authors>Derek Gooding</Authors>
 	  <Description>A library for adding lightweight Dependancy Injection to any C# project.</Description>
 	  <PackageTags>CSharp Tools</PackageTags>
@@ -17,6 +17,8 @@
 	  <RepositoryUrl>https://github.com/DerekGooding/SimpleInjection</RepositoryUrl>
 	  <PackageBugTrackerUrl>https://github.com/DerekGooding/SimpleInjection/issues</PackageBugTrackerUrl>
 	  <RepositoryType>git</RepositoryType>
+	  <PackageIcon>icon.png</PackageIcon>
+	  <PackageReadmeFile>README.md</PackageReadmeFile>
 
 	  <GenerateDocumentationFile>true</GenerateDocumentationFile>
 	  <DocumentationFile>bin\SimpleInjection.xml</DocumentationFile>

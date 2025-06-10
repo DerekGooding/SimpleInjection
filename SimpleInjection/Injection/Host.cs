@@ -11,9 +11,9 @@
 /// </remarks>
 public sealed class Host
 {
-    private readonly List<ServiceDescriptor> _serviceDescriptors = new List<ServiceDescriptor>();
-    private readonly Dictionary<Type, object> _singletonInstances = new Dictionary<Type, object>();
-    private readonly Dictionary<Type, Func<Scope, object>> _factories = new Dictionary<Type, Func<Scope, object>>();
+    private readonly List<ServiceDescriptor> _serviceDescriptors = [];
+    private readonly Dictionary<Type, object> _singletonInstances = [];
+    private readonly Dictionary<Type, Func<Scope, object>> _factories = [];
     private bool _initialized;
 
     private Host() { }
@@ -152,7 +152,8 @@ public sealed class Host
                 CreateTransientFactory(descriptor);
                 break;
             default:
-                throw new ArgumentOutOfRangeException();
+                throw new ArgumentOutOfRangeException(nameof(descriptor), descriptor.Lifetime,
+                                                      "Invalid service lifetime.");
         }
     }
 
@@ -226,10 +227,8 @@ public sealed class Host
         if (!_initialized)
             throw new InvalidOperationException("Host must be initialized.");
 
-        using (var scope = CreateScope())
-        {
-            return GetService<T>(scope);
-        }
+        using var scope = CreateScope();
+        return GetService<T>(scope);
     }
 
     /// <summary>

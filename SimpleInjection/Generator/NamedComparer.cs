@@ -18,7 +18,7 @@
 /// var dictionary = new Dictionary&lt;MyKey, string&gt;(new NamedComparer&lt;MyKey&gt;());
 /// </code>
 /// </example>
-public class NamedComparer<T> : IEqualityComparer<T> where T : INamed
+public class NamedComparer<T> : IEqualityComparer<T> where T : notnull, INamed
 {
     /// <summary>
     /// Determines whether two objects of type <typeparamref name="T"/> are equal.
@@ -31,7 +31,7 @@ public class NamedComparer<T> : IEqualityComparer<T> where T : INamed
     /// <remarks>
     /// This method performs a null check before comparing names.
     /// </remarks>
-    public bool Equals(T x, T y) => x?.Name == y?.Name;
+    public bool Equals(T? x, T? y) => x?.Name == y?.Name;
 
     /// <summary>
     /// Returns a hash code for the specified object based on its <see cref="INamed.Name"/>.

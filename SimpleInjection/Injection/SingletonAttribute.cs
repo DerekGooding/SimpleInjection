@@ -10,4 +10,4 @@
 /// The class will be automatically discovered and added to the <see cref="Host"/> when the host is initialized.
 /// </remarks>
 [AttributeUsage(AttributeTargets.Class)]
-public class SingletonAttribute : Attribute { }
+public class SingletonAttribute : Attribute;

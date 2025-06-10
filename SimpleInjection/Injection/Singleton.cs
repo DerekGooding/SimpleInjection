@@ -1,12 +1,10 @@
 ﻿namespace SimpleInjection.Injection;
 
-internal class Singleton
+internal class Singleton(Type type)
 {
-    public Singleton(Type type) => Type = type;
+    internal Type Type { get; } = type;
 
-    internal Type Type { get; }
-
-    private object _instance;
+    private object? _instance;
 
     public object Instance
     {
@@ -14,10 +12,9 @@ internal class Singleton
         set => _instance = value;
     }
 
-    internal List<Type> Dependencies => Type.GetConstructors()
+    internal List<Type> Dependencies => [.. Type.GetConstructors()
                 .SelectMany(c => c.GetParameters())
-                .Select(p => p.ParameterType)
-                .ToList();
+                .Select(p => p.ParameterType)];
 
     internal void Initialize(params object[] args)
     {

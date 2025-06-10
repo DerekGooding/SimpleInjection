@@ -11,7 +11,7 @@
 public class Scope : IDisposable
 {
     private readonly Host _host;
-    private readonly Dictionary<Type, object> _scopedInstances = new Dictionary<Type, object>();
+    private readonly Dictionary<Type, object> _scopedInstances = [];
     private bool _disposed;
 
     /// <summary>
@@ -51,6 +51,7 @@ public class Scope : IDisposable
     /// </summary>
     public void Dispose()
     {
+        GC.SuppressFinalize(this);
         if (!_disposed)
         {
             foreach (var instance in _scopedInstances.Values)

@@ -10,4 +10,4 @@
 /// A new instance will be created each time the service is requested.
 /// </remarks>
 [AttributeUsage(AttributeTargets.Class)]
-public class TransientAttribute : Attribute { }
+public class TransientAttribute : Attribute;

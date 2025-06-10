@@ -10,4 +10,4 @@
 /// A new instance will be created for each scope (typically representing a request or operation).
 /// </remarks>
 [AttributeUsage(AttributeTargets.Class)]
-public class ScopedAttribute : Attribute { }
+public class ScopedAttribute : Attribute;

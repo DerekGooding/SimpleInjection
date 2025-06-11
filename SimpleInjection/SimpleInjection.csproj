@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-	<Title>SimpleInjection</Title>
+    <Title>SimpleInjection - Lightweight DI Container with Source Generation</Title>
     <TargetFrameworks>net9.0;net8.0;</TargetFrameworks>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
@@ -10,8 +10,23 @@
 	<PackageId>SimpleInjection</PackageId>
 	<Version>0.9.5</Version>
 	<Authors>Derek Gooding</Authors>
-	<Description>A library for adding lightweight Dependancy Injection to any C# project.</Description>
-	<PackageTags>CSharp Tools</PackageTags>
+	<Company>Derek Gooding</Company>
+	<Description>
+	      A lightweight dependency injection container with automatic service discovery and powerful source generation for content management. 
+	      Features attribute-based registration ([Singleton], [Scoped], [Transient]), automatic enum generation from collections, 
+	      type-safe content access, and Roslyn analyzers for performance optimization.
+	</Description>
+	<PackageTags>
+		dependency-injection;DI;IoC;container;source-generator;roslyn;analyzer;
+		content-management;enum-generation;performance;csharp;dotnet;
+		singleton;scoped;transient;service-locator;automatic-registration;
+		type-safety;code-generation;lightweight;minimal;simple
+	</PackageTags>
+
+	<Summary>
+		Lightweight DI container with source generation - automatic service discovery, 
+		enum generation from content collections, and performance-optimized analyzers.
+	</Summary>
 
 	<PackageLicenseExpression>MIT</PackageLicenseExpression>
 	<PackageReadmeFile>README.md</PackageReadmeFile>
@@ -19,10 +34,26 @@
 	<RepositoryUrl>https://github.com/DerekGooding/SimpleInjection</RepositoryUrl>
 	<PackageBugTrackerUrl>https://github.com/DerekGooding/SimpleInjection/issues</PackageBugTrackerUrl>
 	<RepositoryType>git</RepositoryType>
+	<RepositoryBranch>main</RepositoryBranch>
+	<RepositoryCommit>$(GitCommitId)</RepositoryCommit>
 	  
 	<PackageIcon>icon.png</PackageIcon>
 	<GenerateDocumentationFile>true</GenerateDocumentationFile>
 	<DocumentationFile>bin\SimpleInjection.xml</DocumentationFile>
+
+	<Copyright>Copyright © Derek Gooding 2025</Copyright>
+	<Product>SimpleInjection</Product>
+	<AssemblyTitle>SimpleInjection - Lightweight DI with Source Generation</AssemblyTitle>
+	<AssemblyDescription>$(Description)</AssemblyDescription>
+	<NeutralLanguage>en-US</NeutralLanguage>
+
+	<DevelopmentDependency>false</DevelopmentDependency>
+	<IsTool>false</IsTool>
+
+	<PackageType>Dependency</PackageType>
+	<MinClientVersion>4.1.0</MinClientVersion>
+	<RequireLicenseAcceptance>false</RequireLicenseAcceptance>
+
   </PropertyGroup>
 
 	<ItemGroup>

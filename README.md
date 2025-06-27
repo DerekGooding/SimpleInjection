@@ -1,4 +1,6 @@
-# SimpleInjection
+# <img src="https://github.com/DerekGooding/SimpleInjection/blob/main/Icon.png" width=50 height=50/> SimpleInjection 
+
+
 
 A lightweight dependency injection library for C# that combines simple DI container functionality with powerful source generation for content management.
 

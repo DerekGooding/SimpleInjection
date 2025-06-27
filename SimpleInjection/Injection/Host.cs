@@ -255,8 +255,30 @@ public sealed class Host
     {
         var type = typeof(T);
 
-        return !_factories.TryGetValue(type, out var factory)
-            ? throw new InvalidOperationException($"Service of type {type.Name} is not registered.")
-            : (T)factory(scope);
+        // Try direct factory lookup first
+        if (_factories.TryGetValue(type, out var factory))
+            return (T)factory(scope);
+
+        // If not found and type is interface, try to find a concrete implementation
+        if (type.IsInterface)
+        {
+            // Find all descriptors that implement this interface
+            var implementations = _serviceDescriptors
+                .Where(sd => type.IsAssignableFrom(sd.ServiceType) && !sd.ServiceType.IsInterface && !sd.ServiceType.IsAbstract)
+                .ToList();
+
+            if (implementations.Count == 1)
+            {
+                var implType = implementations[0].ServiceType;
+                if (_factories.TryGetValue(implType, out var implFactory))
+                    return (T)implFactory(scope);
+            }
+            else if (implementations.Count > 1)
+            {
+                throw new InvalidOperationException($"Multiple implementations found for interface {type.Name}. Please register only one or use a more specific type.");
+            }
+        }
+
+        throw new InvalidOperationException($"Service of type {type.Name} is not registered.");
     }
 }

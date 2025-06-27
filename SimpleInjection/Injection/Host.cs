@@ -178,7 +178,27 @@ public sealed class Host
         {
             if (!_singletonInstances.TryGetValue(serviceType, out var instance))
             {
-                instance = CreateInstance(serviceType, scope);
+                var typeToCreate = serviceType;
+                if (serviceType.IsInterface)
+                {
+                    // Find all concrete implementations for this interface
+                    var implementations = _serviceDescriptors
+                        .Where(sd => serviceType.IsAssignableFrom(sd.ServiceType) && !sd.ServiceType.IsInterface && !sd.ServiceType.IsAbstract)
+                        .ToList();
+                    if (implementations.Count == 1)
+                    {
+                        typeToCreate = implementations[0].ServiceType;
+                    }
+                    else if (implementations.Count > 1)
+                    {
+                        throw new InvalidOperationException($"Multiple implementations found for interface {serviceType.Name}. Please register only one or use a more specific type.");
+                    }
+                    else
+                    {
+                        throw new InvalidOperationException($"No implementation found for interface {serviceType.Name}.");
+                    }
+                }
+                instance = CreateInstance(typeToCreate, scope);
                 _singletonInstances[serviceType] = instance;
             }
             return instance;

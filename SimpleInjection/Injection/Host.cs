@@ -45,17 +45,34 @@ public sealed class Host
         {
             foreach (var type in assembly.GetTypes())
             {
+                ServiceLifetime? lifetime = null;
                 if (type.GetCustomAttributes(typeof(SingletonAttribute), false).Length > 0)
                 {
-                    _serviceDescriptors.Add(new ServiceDescriptor(type, ServiceLifetime.Singleton));
+                    lifetime = ServiceLifetime.Singleton;
                 }
                 else if (type.GetCustomAttributes(typeof(ScopedAttribute), false).Length > 0)
                 {
-                    _serviceDescriptors.Add(new ServiceDescriptor(type, ServiceLifetime.Scoped));
+                    lifetime = ServiceLifetime.Scoped;
                 }
                 else if (type.GetCustomAttributes(typeof(TransientAttribute), false).Length > 0)
                 {
-                    _serviceDescriptors.Add(new ServiceDescriptor(type, ServiceLifetime.Transient));
+                    lifetime = ServiceLifetime.Transient;
+                }
+
+                if (lifetime.HasValue)
+                {
+                    // Register the concrete type
+                    _serviceDescriptors.Add(new ServiceDescriptor(type, lifetime.Value));
+
+                    // Register all non-system interfaces implemented by this type
+                    foreach (var iface in type.GetInterfaces())
+                    {
+                        if (iface.Namespace?.StartsWith("System") == false &&
+                            !_serviceDescriptors.Any(sd => sd.ServiceType == iface))
+                        {
+                            _serviceDescriptors.Add(new ServiceDescriptor(iface, lifetime.Value));
+                        }
+                    }
                 }
             }
         }
@@ -72,11 +89,7 @@ public sealed class Host
 
     private void BuildFactories()
     {
-        // First, sort services to resolve dependencies in the correct order
-        var sortedServices = SortServicesByDependencies();
-
-        // Create factories for each service
-        foreach (var descriptor in sortedServices)
+        foreach (var descriptor in SortServicesByDependencies())
         {
             CreateFactory(descriptor);
         }

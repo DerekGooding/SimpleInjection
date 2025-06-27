@@ -101,7 +101,6 @@ public class EnumGenerator : IIncrementalGenerator
                 yield return enumName;
             }
         }
-        // Handle collection expressions `[]` directly
         else if (initializer is CollectionExpressionSyntax collection)
         {
             foreach (var enumName in ExtractFromCollection(ctx, collection))

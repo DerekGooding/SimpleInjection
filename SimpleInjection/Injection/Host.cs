@@ -206,7 +206,7 @@ public sealed class Host
     private object CreateInstance(Type type, Scope scope)
     {
         var constructor = type.GetConstructors().FirstOrDefault()
-            ?? throw new InvalidOperationException($"No public constructor found for type {type.Name}");
+    ?? throw new InvalidOperationException($"No public constructor found for type {type.Name}");
 
         var parameters = constructor.GetParameters();
         var arguments = new object[parameters.Length];
@@ -214,12 +214,41 @@ public sealed class Host
         for (var i = 0; i < parameters.Length; i++)
         {
             var paramType = parameters[i].ParameterType;
-            if (!_factories.TryGetValue(paramType, out var factory))
+
+            if (paramType.IsInterface)
             {
+                // Find the concrete implementation for this interface
+                var implementations = _serviceDescriptors
+                    .Where(sd => paramType.IsAssignableFrom(sd.ServiceType) && !sd.ServiceType.IsInterface && !sd.ServiceType.IsAbstract)
+                    .ToList();
+
+                if (implementations.Count == 1)
+                {
+                    var implType = implementations[0].ServiceType;
+                    if (_factories.TryGetValue(implType, out var implFactory))
+                    {
+                        arguments[i] = implFactory(scope);
+                        continue;
+                    }
+                }
+                else if (implementations.Count > 1)
+                {
+                    throw new InvalidOperationException($"Multiple implementations found for interface {paramType.Name} when resolving dependency for {type.Name}. Please register only one or use a more specific type.");
+                }
+
+                throw new InvalidOperationException($"No implementation found for interface {paramType.Name} when resolving dependency for {type.Name}");
+            }
+            else
+            {
+                // It's a concrete type, look it up directly
+                if (_factories.TryGetValue(paramType, out var factory))
+                {
+                    arguments[i] = factory(scope);
+                    continue;
+                }
+
                 throw new InvalidOperationException($"Cannot resolve dependency {paramType.Name} for {type.Name}");
             }
-
-            arguments[i] = factory(scope);
         }
 
         return constructor.Invoke(arguments);

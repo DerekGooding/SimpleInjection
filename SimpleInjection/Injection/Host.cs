@@ -113,7 +113,7 @@ public sealed class Host
         }
     }
 
-    private void ProcessRemainingServices(List<ServiceDescriptor> result, List<ServiceDescriptor> remaining)
+    private static void ProcessRemainingServices(List<ServiceDescriptor> result, List<ServiceDescriptor> remaining)
     {
         var lastCount = int.MaxValue;
         while (remaining.Count > 0 && lastCount != remaining.Count)
@@ -124,7 +124,7 @@ public sealed class Host
             {
                 var descriptor = remaining[i];
                 var allDependenciesResolved = descriptor.Dependencies.All(dep =>
-                    _serviceDescriptors.Any(sd => sd.ServiceType == dep && result.Contains(sd)));
+                    CanResolveDependency(dep, result));
 
                 if (allDependenciesResolved)
                 {
@@ -139,6 +139,20 @@ public sealed class Host
         {
             throw new InvalidOperationException("Circular dependency detected or missing service registration.");
         }
+    }
+
+    private static bool CanResolveDependency(Type dependencyType, List<ServiceDescriptor> processedDescriptors)
+    {
+        // Check if we have a direct match (concrete type)
+        if (processedDescriptors.Any(sd => sd.ServiceType == dependencyType))
+            return true;
+
+        // If it's an interface, check if we have a concrete implementation
+        return dependencyType.IsInterface &&
+               processedDescriptors.Any(sd =>
+               dependencyType.IsAssignableFrom(sd.ServiceType) &&
+               !sd.ServiceType.IsInterface &&
+               !sd.ServiceType.IsAbstract);
     }
 
     private void CreateFactory(ServiceDescriptor descriptor)

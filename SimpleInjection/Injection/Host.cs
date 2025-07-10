@@ -63,16 +63,6 @@ public sealed class Host
                 {
                     // Register the concrete type
                     _serviceDescriptors.Add(new ServiceDescriptor(type, lifetime.Value));
-
-                    // Register all non-system interfaces implemented by this type
-                    foreach (var iface in type.GetInterfaces())
-                    {
-                        if (iface.Namespace?.StartsWith("System") == false &&
-                            !_serviceDescriptors.Any(sd => sd.ServiceType == iface))
-                        {
-                            _serviceDescriptors.Add(new ServiceDescriptor(iface, lifetime.Value));
-                        }
-                    }
                 }
             }
         }
@@ -178,27 +168,7 @@ public sealed class Host
         {
             if (!_singletonInstances.TryGetValue(serviceType, out var instance))
             {
-                var typeToCreate = serviceType;
-                if (serviceType.IsInterface)
-                {
-                    // Find all concrete implementations for this interface
-                    var implementations = _serviceDescriptors
-                        .Where(sd => serviceType.IsAssignableFrom(sd.ServiceType) && !sd.ServiceType.IsInterface && !sd.ServiceType.IsAbstract)
-                        .ToList();
-                    if (implementations.Count == 1)
-                    {
-                        typeToCreate = implementations[0].ServiceType;
-                    }
-                    else if (implementations.Count > 1)
-                    {
-                        throw new InvalidOperationException($"Multiple implementations found for interface {serviceType.Name}. Please register only one or use a more specific type.");
-                    }
-                    else
-                    {
-                        throw new InvalidOperationException($"No implementation found for interface {serviceType.Name}.");
-                    }
-                }
-                instance = CreateInstance(typeToCreate, scope);
+                instance = CreateInstance(serviceType, scope);
                 _singletonInstances[serviceType] = instance;
             }
             return instance;

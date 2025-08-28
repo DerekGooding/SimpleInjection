@@ -30,12 +30,13 @@ public class EnumGenerator : IIncrementalGenerator
                 if (iContentInterface?.TypeArguments.FirstOrDefault() is not INamedTypeSymbol typeArgument) continue;
 
                 // Extract enum member names from the All property of the class
+                var structName = typeArgument.Name;
                 var enumMembers = ExtractEnumMembers(ctx, classSymbol).ToImmutableArray();
 
                 var source = GenerateEnumSource(classSymbol.Name, enumMembers);
                 ctx.AddSource($"{classSymbol.Name}TypeEnum.g.cs", SourceText.From(source, Encoding.UTF8));
 
-                var helper = GeneratePartialHelper(classSymbol.Name,
+                var helper = GeneratePartialHelper(classSymbol.Name, structName,
                                                       classSymbol.ContainingNamespace.ToDisplayString(),
                                                       typeArgument.ToDisplayString(), enumMembers);
                 ctx.AddSource($"{classSymbol.Name}Helper.g.cs", SourceText.From(helper, Encoding.UTF8));
@@ -196,7 +197,7 @@ namespace ContentEnums
 }}";
     }
 
-    private static string GeneratePartialHelper(string className, string fullNamespace, string typeArgument, ImmutableArray<string> enumMembers)
+    private static string GeneratePartialHelper(string className, string structName, string fullNamespace, string typeArgument, ImmutableArray<string> enumMembers)
     {
         var membersSource = string.Join(";\n", enumMembers.Select((m, i) => $"        public {typeArgument} {m} => All[{i}]"));
         return $@"// Auto-generated code
@@ -204,6 +205,11 @@ using ContentEnums;
 
 namespace {fullNamespace}
 {{
+    public partial record struct {structName}
+    {{
+        public bool Equals({structName} other) => string.Equals(Name, other.Name);
+        public override int GetHashCode() => Name?.GetHashCode() ?? 0;
+    }}
     public partial class {className}
     {{
         public {typeArgument} Get({className}Type type) => All[(int)type];

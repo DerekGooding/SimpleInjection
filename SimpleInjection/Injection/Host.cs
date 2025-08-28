@@ -9,7 +9,7 @@
 /// initialization and dependency resolution. It automatically discovers attributed classes and registers them
 /// with their appropriate lifetimes.
 /// </remarks>
-public sealed class Host
+public sealed partial class Host
 {
     private readonly List<ServiceDescriptor> _serviceDescriptors = [];
     private readonly Dictionary<Type, object> _singletonInstances = [];
@@ -28,6 +28,7 @@ public sealed class Host
     /// with service lifetime attributes (<see cref="SingletonAttribute"/>, <see cref="ScopedAttribute"/>,
     /// <see cref="TransientAttribute"/>). It then creates a new host and registers these types with appropriate lifetimes.
     /// </remarks>
+    //[Obsolete("Use Host.Configure() instead. This method will be removed in future versions.")]
     public static Host Initialize()
     {
         var host = new Host();

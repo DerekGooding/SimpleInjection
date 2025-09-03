@@ -31,6 +31,10 @@ public class EnumGenerator : IIncrementalGenerator
 
                 // Extract enum member names from the All property of the class
                 var structName = typeArgument.Name;
+                var uniqueStruct = typeArgument.GetAttributes()
+                    .Any(attr => attr.AttributeClass?.Name == "UniqueAttribute");
+                var structReadonly = typeArgument.IsReadOnly;
+
                 var enumMembers = ExtractEnumMembers(ctx, classSymbol).ToImmutableArray();
 
                 var source = GenerateEnumSource(classSymbol.Name, enumMembers);
@@ -38,7 +42,7 @@ public class EnumGenerator : IIncrementalGenerator
 
                 var helper = GeneratePartialHelper(classSymbol.Name, structName,
                                                       classSymbol.ContainingNamespace.ToDisplayString(),
-                                                      typeArgument.ToDisplayString(), enumMembers);
+                                                      typeArgument.ToDisplayString(), enumMembers, uniqueStruct, structReadonly);
                 ctx.AddSource($"{classSymbol.Name}Helper.g.cs", SourceText.From(helper, Encoding.UTF8));
             }
         });
@@ -197,19 +201,58 @@ namespace ContentEnums
 }}";
     }
 
-    private static string GeneratePartialHelper(string className, string structName, string fullNamespace, string typeArgument, ImmutableArray<string> enumMembers)
+    private static string GeneratePartialHelper(
+        string className,
+        string structName,
+        string fullNamespace,
+        string typeArgument,
+        ImmutableArray<string> enumMembers,
+        bool uniqueStruct,
+        bool structReadonly)
     {
         var membersSource = string.Join(";\n", enumMembers.Select((m, i) => $"        public {typeArgument} {m} => All[{i}]"));
+        var structSource = string.Empty;
+        if (uniqueStruct)
+        {
+            // Generate index-based comparison using sanitized names
+            var nameToIndexMapping = string.Join(",\n",
+                enumMembers.Select((name, index) => $"            [\"{name}\"] = {index}"));
+            structSource = structReadonly
+                ? $@"
+    public readonly partial record struct {structName}
+    {{
+        private static readonly Dictionary<string, int> _nameToIndexMap = new Dictionary<string, int>
+        {{
+{nameToIndexMapping}
+        }};
+
+        private readonly int Index => _nameToIndexMap.TryGetValue(Name ?? string.Empty, out var idx) ? idx : -1;
+        
+        public bool Equals({structName} other) => Index == other.Index;
+        public override int GetHashCode() => Index;
+    }}"
+                : $@"
+    public partial record struct {structName}
+    {{
+        private static readonly Dictionary<string, int> _nameToIndexMap = new Dictionary<string, int>
+        {{
+{nameToIndexMapping}
+        }};
+
+        private int? _index;
+        private int Index => _index ??= _nameToIndexMap.TryGetValue(Name ?? string.Empty, out var idx) ? idx : -1;
+        
+        public bool Equals({structName} other) => Index == other.Index;
+        public override int GetHashCode() => Index;
+    }}";
+        }
+
         return $@"// Auto-generated code
 using ContentEnums;
 
 namespace {fullNamespace}
 {{
-    public partial record struct {structName}
-    {{
-        public bool Equals({structName} other) => string.Equals(Name, other.Name);
-        public override int GetHashCode() => Name?.GetHashCode() ?? 0;
-    }}
+    {structSource}
     public partial class {className}
     {{
         public {typeArgument} Get({className}Type type) => All[(int)type];

@@ -12,7 +12,7 @@
 /// </remarks>
 /// <param name="serviceType">The type of the service.</param>
 /// <param name="lifetime">The lifetime of the service.</param>
-internal class ServiceDescriptor(Type serviceType, ServiceLifetime lifetime)
+public class ServiceDescriptor(Type serviceType, ServiceLifetime lifetime)
 {
     /// <summary>
     /// Gets the type of the service.
@@ -27,7 +27,7 @@ internal class ServiceDescriptor(Type serviceType, ServiceLifetime lifetime)
     /// <summary>
     /// Gets the list of types that this service depends on.
     /// </summary>
-    internal List<Type> Dependencies => [.. ServiceType.GetConstructors()
+    public List<Type> Dependencies => [.. ServiceType.GetConstructors()
                 .SelectMany(c => c.GetParameters())
                 .Select(p => p.ParameterType)];
 }

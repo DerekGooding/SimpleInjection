@@ -9,5 +9,12 @@
 /// The class will be automatically discovered and added to the <see cref="Host"/> when the host is initialized.
 /// A new instance will be created for each scope (typically representing a request or operation).
 /// </remarks>
-[AttributeUsage(AttributeTargets.Class)]
-public class ScopedAttribute : Attribute;
+[AttributeUsage(AttributeTargets.Class, AllowMultiple = false)]
+public class ScopedAttribute : Attribute
+{
+    public Type? ServiceType { get; }
+
+    public ScopedAttribute() { }
+
+    public ScopedAttribute(Type serviceType) => ServiceType = serviceType;
+}

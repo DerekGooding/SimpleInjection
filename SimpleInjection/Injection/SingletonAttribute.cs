@@ -9,5 +9,12 @@
 /// The <see cref="SingletonAttribute"/> should be applied to classes that need to be managed as singletons.
 /// The class will be automatically discovered and added to the <see cref="Host"/> when the host is initialized.
 /// </remarks>
-[AttributeUsage(AttributeTargets.Class)]
-public class SingletonAttribute : Attribute;
+[AttributeUsage(AttributeTargets.Class, AllowMultiple = false)]
+public sealed class SingletonAttribute : Attribute
+{
+    public Type? ServiceType { get; }
+
+    public SingletonAttribute() { }
+
+    public SingletonAttribute(Type serviceType) => ServiceType = serviceType;
+}

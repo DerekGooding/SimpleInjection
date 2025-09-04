@@ -9,5 +9,12 @@
 /// The class will be automatically discovered and added to the <see cref="Host"/> when the host is initialized.
 /// A new instance will be created each time the service is requested.
 /// </remarks>
-[AttributeUsage(AttributeTargets.Class)]
-public class TransientAttribute : Attribute;
+[AttributeUsage(AttributeTargets.Class, AllowMultiple = false)]
+public class TransientAttribute : Attribute
+{
+    public Type? ServiceType { get; }
+
+    public TransientAttribute() { }
+
+    public TransientAttribute(Type serviceType) => ServiceType = serviceType;
+}

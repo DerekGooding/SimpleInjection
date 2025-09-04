@@ -44,7 +44,7 @@
 /// <strong>ISubContent Performance Impact:</strong>
 /// </para>
 /// <para>
-/// When structs marked with <see cref="UniqueAttribute"/> are used as keys in <see cref="ISubContent{TKey, TValue}"/> 
+/// When structs marked with <see cref="UniqueAttribute"/> are used as keys in <see cref="ISubContent{TKey, TValue}"/>
 /// implementations, the performance improvement is substantial:
 /// </para>
 /// <list type="bullet">
@@ -69,11 +69,11 @@
 /// // Readonly version (recommended for best performance)
 /// [Unique]
 /// public readonly partial record struct Material(string Name, int Durability, Color Color) : INamed;
-/// 
+///
 /// // Non-readonly version (still optimized with caching)
 /// [Unique]
 /// public partial record struct Material(string Name, int Durability, Color Color) : INamed;
-/// 
+///
 /// public partial class Materials : IContent&lt;Material&gt;
 /// {
 ///     public static Material[] All = [
@@ -82,7 +82,7 @@
 ///         new("Diamond", 500, Color.White)
 ///     ];
 /// }
-/// 
+///
 /// // Usage with ISubContent for high-performance lookups:
 /// public class MaterialProperties : ISubContent&lt;Material, PropertyData&gt;
 /// {
@@ -92,10 +92,10 @@
 ///         [Materials.Gold] = new PropertyData(/* ... */),
 ///         // Fast dictionary operations due to optimized Material equality/hashing
 ///     };
-///     
+///
 ///     public PropertyData this[Material key] => ByKey[key]; // O(1) lookup
 /// }
-/// 
+///
 /// // Generated code enables fast index-based equality:
 /// var iron1 = materials.Iron;
 /// var iron2 = materials.Get(MaterialsType.Iron);

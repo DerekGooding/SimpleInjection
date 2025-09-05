@@ -55,6 +55,7 @@ public class HostGenerator : IIncrementalGenerator
             {
                 var impl = item.symbol;
                 var attr = item.attr;
+
                 var lifetime = attr.AttributeClass?.Name switch
                 {
                     "SingletonAttribute" => "ServiceLifetime.Singleton",
@@ -62,27 +63,30 @@ public class HostGenerator : IIncrementalGenerator
                     "TransientAttribute" => "ServiceLifetime.Transient",
                     _ => null
                 };
-                if (lifetime == null)
-                {
-                    continue;
-                }
 
-                // interface inference
+                if (lifetime == null)
+                    continue;
+
+                // pick interface if explicitly provided, otherwise infer
                 var iface = attr.ConstructorArguments.Length > 0
                     ? attr.ConstructorArguments[0].Value as INamedTypeSymbol
-                    : impl.AllInterfaces.FirstOrDefault(i =>
-                        i.Name == "I" + impl.Name)
+                    : impl.AllInterfaces.FirstOrDefault(i => i.Name == "I" + impl.Name)
                       ?? impl.AllInterfaces.FirstOrDefault();
 
-                // register concrete type
-                sb.AppendLine($"        host._serviceDescriptors.Add(new ServiceDescriptor(typeof({impl.ToDisplayString()}), {lifetime}));");
+                // register concrete type to itself
+                sb.AppendLine(
+                    $"        host._serviceDescriptors.Add(new ServiceDescriptor(typeof({impl.ToDisplayString()}), typeof({impl.ToDisplayString()}), {lifetime}));");
 
+                // register interface -> concrete mapping (if any)
                 if (iface != null)
-                    sb.AppendLine($"        host._serviceDescriptors.Add(new ServiceDescriptor(typeof({iface.ToDisplayString()}), {lifetime}));");
+                {
+                    sb.AppendLine(
+                        $"        host._serviceDescriptors.Add(new ServiceDescriptor(typeof({iface.ToDisplayString()}), typeof({impl.ToDisplayString()}), {lifetime}));");
+                }
             }
 
             // call InitializeUsingAttribute (which builds factories)
-            sb.AppendLine("        host.SetRoot(new Scope(host));");
+            sb.AppendLine("        host._rootScope = new Scope(host.ResolveInternal);");
             sb.AppendLine("        host.InitializeUsingAttribute();");
             sb.AppendLine("        return host;");
             sb.AppendLine("    }");
@@ -98,11 +102,6 @@ public class HostGenerator : IIncrementalGenerator
 
 
     const string _stockMethods = """
-    private void SetRoot(Scope rootScope)
-    {
-        _rootScope = rootScope;
-    }
-
     private void InitializeUsingAttribute()
     {
         if (_initialized)
@@ -110,6 +109,14 @@ public class HostGenerator : IIncrementalGenerator
 
         BuildFactories();
         _initialized = true;
+    }
+
+    private object ResolveInternal(Type type, Scope scope)
+    {
+        if (_factories.TryGetValue(type, out var factory))
+            return factory(scope);
+
+        throw new InvalidOperationException($"Service of type {type.Name} is not registered.");
     }
     
     private void BuildFactories()
@@ -211,14 +218,14 @@ public class HostGenerator : IIncrementalGenerator
 
     private void CreateSingletonFactory(ServiceDescriptor descriptor)
     {
-        var serviceType = descriptor.ServiceType;
+        var implType = descriptor.ImplementationType ?? descriptor.ServiceType;
 
-        _factories[serviceType] = scope =>
+        _factories[implType] = scope =>
         {
-            if (!_singletonInstances.TryGetValue(serviceType, out var instance))
+            if (!_singletonInstances.TryGetValue(implType, out var instance))
             {
-                instance = CreateInstance(serviceType, scope);
-                _singletonInstances[serviceType] = instance;
+                instance = CreateInstance(implType, scope);
+                _singletonInstances[implType] = instance;
             }
             return instance;
         };
@@ -226,22 +233,26 @@ public class HostGenerator : IIncrementalGenerator
 
     private void CreateScopedFactory(ServiceDescriptor descriptor)
     {
-        var serviceType = descriptor.ServiceType;
+        var implType = descriptor.ImplementationType ?? descriptor.ServiceType;
 
-        _factories[serviceType] = scope =>
-            scope.GetOrCreateScopedInstance(serviceType, () => CreateInstance(serviceType, scope));
+        _factories[implType] = scope =>
+            scope.GetOrCreateScopedInstance(implType, () => CreateInstance(implType, scope));
     }
 
     private void CreateTransientFactory(ServiceDescriptor descriptor)
     {
-        var serviceType = descriptor.ServiceType;
-        _factories[serviceType] = scope => CreateInstance(serviceType, scope);
+        var implType = descriptor.ImplementationType ?? descriptor.ServiceType;
+
+        _factories[implType] = scope => CreateInstance(implType, scope);
     }
 
     private object CreateInstance(Type type, Scope scope)
     {
+        if (type.IsInterface || type.IsAbstract)
+            throw new InvalidOperationException($"Cannot create an instance of {type.Name} directly. It must be mapped to a concrete type.");
+
         var constructor = type.GetConstructors().FirstOrDefault()
-    ?? throw new InvalidOperationException($"No public constructor found for type {type.Name}");
+        ?? throw new InvalidOperationException($"No public constructor found for type {type.Name}");
 
         var parameters = constructor.GetParameters();
         var arguments = new object[parameters.Length];
@@ -295,7 +306,26 @@ public class HostGenerator : IIncrementalGenerator
     /// <returns>A new <see cref="Scope"/> instance.</returns>
     /// <exception cref="InvalidOperationException">Thrown if the host has not been initialized.</exception>
     public Scope CreateScope()
-        => !_initialized ? throw new InvalidOperationException("Host must be initialized before creating a scope.") : new Scope((type, s) => _factories[type](s));
+    {
+        if (!_initialized)
+            throw new InvalidOperationException("Host must be initialized before creating a scope.");
+
+        return new Scope((type, s) =>
+        {
+            // Direct factory lookup
+            if (_factories.TryGetValue(type, out var factory))
+                return factory(s);
+
+            // If type is an interface or abstract, resolve via descriptor → ImplementationType
+            var descriptor = _serviceDescriptors.FirstOrDefault(sd => sd.ServiceType == type);
+            if (descriptor?.ImplementationType is not null && _factories.TryGetValue(descriptor.ImplementationType, out var implFactory))
+            {
+                return implFactory(s);
+            }
+
+            throw new InvalidOperationException($"Cannot resolve type {type.Name} from scope.");
+        });
+    }
 
     /// <summary>
     /// Retrieves a singleton service of the specified type.
@@ -322,19 +352,26 @@ public class HostGenerator : IIncrementalGenerator
     {
         var type = typeof(T);
 
+        // Fast path: direct factory lookup
         if (_factories.TryGetValue(type, out var factory))
             return (T)factory(scope);
 
-        // If requesting an interface, check its registration
+        // Lookup by descriptor
         var descriptor = _serviceDescriptors.FirstOrDefault(sd => sd.ServiceType == type);
-        if (descriptor is not null)
+        if (descriptor is not null && descriptor.ImplementationType is not null)
         {
-            if (_factories.TryGetValue(descriptor.ServiceType ?? descriptor.ServiceType, out var implFactory))
+            if (_factories.TryGetValue(descriptor.ImplementationType, out var implFactory))
                 return (T)implFactory(scope);
         }
 
         throw new InvalidOperationException($"Service of type {type.Name} is not registered.");
     }
+
+    public void Dispose()
+    {
+        _rootScope.Dispose();
+    }
+
 """;
 
 }

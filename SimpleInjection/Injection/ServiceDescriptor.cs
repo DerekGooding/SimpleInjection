@@ -12,12 +12,17 @@
 /// </remarks>
 /// <param name="serviceType">The type of the service.</param>
 /// <param name="lifetime">The lifetime of the service.</param>
-public class ServiceDescriptor(Type serviceType, ServiceLifetime lifetime)
+public class ServiceDescriptor(Type serviceType, Type implementationType, ServiceLifetime lifetime)
 {
     /// <summary>
-    /// Gets the type of the service.
+    /// Gets the type of the service (usually an interface).
     /// </summary>
     public Type ServiceType { get; } = serviceType;
+
+    /// <summary>
+    /// Gets the concrete type that implements the service.
+    /// </summary>
+    public Type ImplementationType { get; } = implementationType;
 
     /// <summary>
     /// Gets the lifetime of the service.
@@ -27,7 +32,7 @@ public class ServiceDescriptor(Type serviceType, ServiceLifetime lifetime)
     /// <summary>
     /// Gets the list of types that this service depends on.
     /// </summary>
-    public List<Type> Dependencies => [.. ServiceType.GetConstructors()
-                .SelectMany(c => c.GetParameters())
-                .Select(p => p.ParameterType)];
+    public List<Type> Dependencies => [.. ImplementationType.GetConstructors()
+        .SelectMany(c => c.GetParameters())
+        .Select(p => p.ParameterType)];
 }

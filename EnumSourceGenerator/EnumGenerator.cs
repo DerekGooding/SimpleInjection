@@ -216,7 +216,7 @@ namespace ContentEnums
         {
             // Generate index-based comparison using sanitized names
             var nameToIndexMapping = string.Join(",\n",
-                enumMembers.Select((name, index) => $"            [\"{name}\"] = {index}"));
+                enumMembers.Select((name, index) => $"            {{\"{name}\" , {index}}}"));
             structSource = structReadonly
                 ? $@"
     public readonly partial record struct {structName}

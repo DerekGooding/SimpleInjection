@@ -144,14 +144,14 @@ public class EnumGenerator : IIncrementalGenerator
                 {
                     var firstArgument = objectCreation.ArgumentList?.Arguments.FirstOrDefault();
                     if (firstArgument?.Expression is LiteralExpressionSyntax literal)
-                        yield return SanitizeEnumName(literal.Token.ValueText);
+                        yield return literal.Token.ValueText;
                 }
                 // Handle shorthand object initializers like `new("...")`
                 else if (objectExpression.Expression is ImplicitObjectCreationExpressionSyntax implicitCreation)
                 {
                     var firstArgument = implicitCreation.ArgumentList?.Arguments.FirstOrDefault();
                     if (firstArgument?.Expression is LiteralExpressionSyntax literal)
-                        yield return SanitizeEnumName(literal.Token.ValueText);
+                        yield return literal.Token.ValueText;
                 }
             }
         }
@@ -176,21 +176,22 @@ public class EnumGenerator : IIncrementalGenerator
             {
                 var firstArgument = objectCreation.ArgumentList?.Arguments.FirstOrDefault();
                 if (firstArgument?.Expression is LiteralExpressionSyntax literal)
-                    yield return SanitizeEnumName(literal.Token.ValueText);
+                    yield return literal.Token.ValueText;
             }
             // Handle shorthand object initializers like `new("...")`
             else if (expression is ImplicitObjectCreationExpressionSyntax implicitCreation)
             {
                 var firstArgument = implicitCreation.ArgumentList?.Arguments.FirstOrDefault();
                 if (firstArgument?.Expression is LiteralExpressionSyntax literal)
-                    yield return SanitizeEnumName(literal.Token.ValueText);
+                    yield return literal.Token.ValueText;
             }
         }
     }
 
     private static string GenerateEnumSource(string className, ImmutableArray<string> enumMembers)
     {
-        var membersSource = string.Join(",\n", enumMembers.Select(m => $"        {m}"));
+        var sanitizedNames = enumMembers.Select(SanitizeEnumName).ToArray();
+        var membersSource = string.Join(",\n", sanitizedNames.Select(m => $"        {m}"));
         return $@"// Auto-generated code
 namespace ContentEnums
 {{
@@ -210,7 +211,8 @@ namespace ContentEnums
         bool uniqueStruct,
         bool structReadonly)
     {
-        var membersSource = string.Join(";\n", enumMembers.Select((m, i) => $"        public {typeArgument} {m} => All[{i}]"));
+        var sanitizedNames = enumMembers.Select(SanitizeEnumName).ToArray();
+        var membersSource = string.Join(";\n", sanitizedNames.Select((m, i) => $"        public {typeArgument} {m} => All[{i}]"));
         var structSource = string.Empty;
         if (uniqueStruct)
         {

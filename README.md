@@ -4,6 +4,22 @@
 
 A lightweight dependency injection library for C# that combines simple DI container functionality with powerful source generation for content management.
 
+## Why SimpleInjection?
+
+In a rich ecosystem of .NET Dependency Injection containers, `SimpleInjection` stands out by focusing on a specific workflow. It's designed for developers who value simplicity and deal with collections of static or semi-static data—a common pattern in games, desktop apps, and configuration management.
+
+`SimpleInjection` is more than just a DI container; it's a productivity tool that combines DI with powerful source generation to reduce boilerplate and prevent common errors.
+
+### SimpleInjection vs. Microsoft.Extensions.DependencyInjection
+
+| Feature                        | SimpleInjection                                         | Microsoft.Extensions.DependencyInjection (Default) |
+| ------------------------------ | ------------------------------------------------------- | ---------------------------------------------------- |
+| **Configuration**              | Attribute-based (`[Singleton]`, etc.)                   | Code-based (`services.AddSingleton()`)               |
+| **Best For**                   | Simplicity, small to medium projects                    | Flexibility, large projects, ASP.NET Core integration |
+| **Content Source Generation**  | ✅ **Built-in** (Generates enums from `IContent<T>`)      | ❌ Not available                                     |
+| **Performance Analyzers**      | ✅ **Built-in** (for `NamedComparer<T>`)                  | ❌ Not available                                     |
+| **Learning Curve**             | Very Low                                                | Low to Medium                                        |
+
 ## Features
 
 ### 🚀 Simple Dependency Injection
@@ -61,6 +77,31 @@ var dbService = host.Get<DatabaseService>();
 // Create scopes for scoped services
 using var scope = host.CreateScope();
 var userService = scope.Get<UserService>();
+```
+
+**Registering by Interface**
+
+You can also register a service against an interface. This is useful for decoupling your application components from concrete implementations.
+
+```csharp
+public interface IMessageSender
+{
+    void Send(string message);
+}
+
+[Singleton(typeof(IMessageSender))]
+public class EmailSender : IMessageSender
+{
+    public void Send(string message) => Console.WriteLine($"Email sent: {message}");
+}
+```
+
+You can then request the service using the interface:
+
+```csharp
+// Request the implementation via its interface
+var messageSender = host.Get<IMessageSender>();
+messageSender.Send("Hello from SimpleInjection!");
 ```
 
 ### 3. Content Generation Usage

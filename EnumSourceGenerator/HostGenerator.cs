@@ -29,11 +29,17 @@ public class HostGenerator : IIncrementalGenerator
                 })
             .Where(s => s is not null)!;
 
+        
+
         var compilationAndClasses = context.CompilationProvider
             .Combine(classSymbols.Collect());
 
         context.RegisterSourceOutput(compilationAndClasses, (spc, source) =>
         {
+            if( source.Right.IsEmpty) return;
+
+            var projectName = source.Left.AssemblyName ?? "GeneratedProject";
+
             var (compilation, classes) = source;
             var services = classes.OfType<(INamedTypeSymbol symbol, AttributeData attr)>().Distinct().ToList();
 
@@ -44,7 +50,7 @@ public class HostGenerator : IIncrementalGenerator
             sb.AppendLine("using System.Collections.Generic;");
             sb.AppendLine("using System.Reflection;");
             sb.AppendLine();
-            sb.AppendLine("namespace SimpleInjection.Injection;");
+            sb.AppendLine($"namespace {projectName}.Genenerated;");
             sb.AppendLine("public sealed class Host : IDisposable");
             sb.AppendLine("{");
             sb.AppendLine("    private readonly Dictionary<Type, object> _singletonInstances = new();");
@@ -64,10 +70,10 @@ public class HostGenerator : IIncrementalGenerator
 
             // Build dependency graph and sort services
             var serviceInfos = BuildServiceInfos(services, compilation);
-            var sortedServices = TopologicalSort(serviceInfos);
+            
 
             // Generate baked factories in dependency order
-            foreach (var serviceInfo in sortedServices)
+            foreach (var serviceInfo in TopologicalSort(serviceInfos))
             {
                 GenerateFactory(sb, serviceInfo, compilation);
             }
@@ -82,7 +88,7 @@ public class HostGenerator : IIncrementalGenerator
 
             sb.AppendLine("}");
 
-            spc.AddSource("Host.Configure.g.cs", SourceText.From(sb.ToString(), Encoding.UTF8));
+            spc.AddSource($"{projectName}.Host.Configure.g.cs", SourceText.From(sb.ToString(), Encoding.UTF8));
         });
     }
 
